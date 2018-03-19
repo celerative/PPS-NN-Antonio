@@ -141,9 +141,9 @@ public class NeuralNetwork
 
             // Apply Activation Function
 
-            Output[0] = Convert.ToSingle(Math.Tanh((double)Output[0]));     //acelerar
+            Output[0] = UnityEngine.Mathf.Atan(Output[0]);     //acelerar
             Output[1] = Lin2(Output[1], 10);                                //frenar
-            Output[2] = Convert.ToSingle(Math.Tanh((double)Output[2]));     //doblar
+            Output[2] = UnityEngine.Mathf.Atan(Output[2]);     //doblar
 
 
 

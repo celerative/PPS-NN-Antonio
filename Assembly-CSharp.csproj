@@ -61,6 +61,7 @@
      <Compile Include="Assets\Scripts\EvolutionManager.cs" />
      <Compile Include="Assets\Scripts\FloatArray.cs" />
      <Compile Include="Assets\Scripts\IntArray.cs" />
+     <Compile Include="Assets\Scripts\LineaBuena.cs" />
      <Compile Include="Assets\Scripts\MathUtils.cs" />
      <Compile Include="Assets\Scripts\NeuralNetwork.cs" />
      <Compile Include="Assets\Scripts\Obstaculo.cs" />

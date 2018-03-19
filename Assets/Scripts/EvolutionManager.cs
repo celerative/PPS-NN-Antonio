@@ -75,7 +75,6 @@ public class EvolutionManager : MonoBehaviour
 
                 Cars.Add(Instantiate(CarPrefab, TrackGenerator.posIni[i], Quaternion.identity, transform).GetComponent<Car>()); // Instantiate a new car and add it to the list of cars
             }
-            Debug.Log(Cars.Count.ToString());
 
         }
     }

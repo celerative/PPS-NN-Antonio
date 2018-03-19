@@ -23,6 +23,7 @@ class TrackGenerator : MonoBehaviour
     public IList<GameObject> LO = new List<GameObject>();
     public IList<GameObject> LS = new List<GameObject>();
     public IList<GameObject> LPU = new List<GameObject>();
+    public IList<GameObject> LB = new List<GameObject>();
 
     public GameObject suelo;
     public GameObject pared;
@@ -30,6 +31,7 @@ class TrackGenerator : MonoBehaviour
     public GameObject checkpoint;
     public GameObject obstaculo;
     public GameObject powerUp;
+    public GameObject Linea;
     public static bool PistaCreada;
     public bool isObstaculos;
     public bool isDeforme;
@@ -38,8 +40,12 @@ class TrackGenerator : MonoBehaviour
     {
         UnityEngine.Debug.Log(a);
     }
-    public void borrarListas(ref IList<GameObject> LPA, ref IList<GameObject> LPR, ref IList<GameObject> LCH, ref IList<GameObject> LO, ref IList<GameObject> LS)
+    public void borrarListas(ref IList<GameObject> LB, ref IList<GameObject> LPA, ref IList<GameObject> LPR, ref IList<GameObject> LCH, ref IList<GameObject> LO, ref IList<GameObject> LS)
     {
+        foreach (var item in LB)
+        {
+            Destroy(item);
+        }
         foreach (var item in LPA)
         {
             Destroy(item);
@@ -88,7 +94,7 @@ class TrackGenerator : MonoBehaviour
         if (EvolutionManager.finalizo)
         {
             PistaCreada = false;
-            borrarListas(ref LPA, ref LPR, ref LCH, ref LO, ref LS);
+            borrarListas(ref LB, ref LPA, ref LPR, ref LCH, ref LO, ref LS);
             CrearPista(Vector3.zero);
             PistaCreada = true;
             EvolutionManager.finalizo = true;
@@ -282,24 +288,32 @@ class TrackGenerator : MonoBehaviour
         }
 
         IList<Punto> listaRoja = new List<Punto>();
+        IList<Punto> listaBuena = new List<Punto>();
         IList<Punto> listaCheckpoint = new List<Punto>();
         Punto[] puntosInteriores;
         int offset = r.Next();
         Vector3 pos, pos2 = new Vector3();
         Quaternion rot;
+        float offsetPos;
+        float offsetBuenas = UnityEngine.Random.Range(0.5f, ancho - 0.5f);
         for (int i = 0; i < xs.Length - 1; i++)
         {
             pos = new Vector3(xs[i], 0, ys[i]);
             rot = Quaternion.Euler(0, angulosEnGrados[i], 0);
             pared.transform.position = pos;
             pared.transform.rotation = rot;
-
             LPA.Add(Instantiate(pared, pos, rot, this.transform));
+
+            pared.transform.Translate(offsetBuenas * -Vector3.back, Space.Self);
+            listaBuena.Add(new Punto(pared.transform.position));
+            pared.transform.Translate((ancho - offsetBuenas) * -Vector3.back, Space.Self);
+
             if (i % 10 == 0)
             {
-                pared.transform.Translate(ancho / 2 * -Vector3.back, Space.Self);
+                offsetPos = UnityEngine.Random.Range(0, ancho / 2);
+                pared.transform.Translate(offsetPos * -Vector3.back, Space.Self);
                 pos2 = pared.transform.position;
-                pared.transform.Translate(ancho / 2 * -Vector3.back, Space.Self);
+                pared.transform.Translate((ancho - offsetPos) * -Vector3.back, Space.Self);
                 listaRoja.Add(new Punto(pared.transform.position));
             }
             else
@@ -316,7 +330,7 @@ class TrackGenerator : MonoBehaviour
                 checkpoint.transform.localScale = new Vector3(0.1f, checkpoint.transform.localScale.y, ancho);
                 LCH.Add(Instantiate(checkpoint, pared.transform.position, Quaternion.Euler(0, angulosEnGrados[i], 0), this.transform));
             }
-            if (UnityEngine.Random.value > 0.93f)
+            if (UnityEngine.Random.value > 0.9999f)
             {
                 powerUp.transform.position = pos;
                 powerUp.transform.rotation = rot;
@@ -335,24 +349,34 @@ class TrackGenerator : MonoBehaviour
             EvolutionManager.ini = posIni[i / (EvolutionManager.CarCount / 10)];
         }
 
+        Punto[] puntosLinea = listaBuena.ToArray();
+        puntosLinea[puntosLinea.Length - 1] = puntosLinea[0];
+        arreglarAngulos(ref puntosLinea);
 
         puntosInteriores = listaRoja.ToArray();
         puntosInteriores[puntosInteriores.Length - 1] = puntosInteriores[0];
         arreglarAngulos(ref puntosInteriores);
 
         Punto[] PC = listaCheckpoint.ToArray();
-        float[] xx2;
-        float[] yy2;
-        float[] xs2, ys2;
+        float[] xx2, xx3;
+        float[] yy2, yy3;
+        float[] xs2, ys2, xs3, ys3;
         float[] angulosEnGrados2 = new float[n2];
-        float[] angulosEnGrados3 = new float[n / 10];
+        float[] angulosEnGrados3 = new float[n2];
         xx2 = Punto.getAbscisas(puntosInteriores);
         yy2 = Punto.getOrdenadas(puntosInteriores);
+
+        xx3 = Punto.getAbscisas(puntosLinea);
+        yy3 = Punto.getOrdenadas(puntosLinea);
+
         CubicSpline.FitParametric(xx2, yy2, n2, out xs2, out ys2, 1, -1, 1, -1);
+        CubicSpline.FitParametric(xx3, yy3, n2, out xs3, out ys3, 1, -1, 1, -1);
 
         for (int i = 0; i < xs2.Length - 1; i++)
         {
             angulosEnGrados2[i] = 180 * Mathf.Atan2(ys2[i + 1] - ys2[i], -xs2[i + 1] + xs2[i]) / Mathf.PI;
+
+            angulosEnGrados3[i] = 180 * Mathf.Atan2(ys3[i + 1] - ys3[i], -xs3[i + 1] + xs3[i]) / Mathf.PI;
         }
 
         for (int i = 0; i < xs2.Length - 1; i++)
@@ -362,6 +386,12 @@ class TrackGenerator : MonoBehaviour
             LPR.Add(Instantiate(paredRoja, new Vector3(xs2[i], 0, ys2[i]), Quaternion.Euler(0, angulosEnGrados2[i], 0), this.transform));
         }
 
+        for (int i = 0; i < xs3.Length; i++)
+        {
+            Linea.transform.rotation = Quaternion.Euler(0, angulosEnGrados3[i], 0);
+            Linea.transform.position = new Vector3(xs3[i], 0, ys3[i]);
+            LB.Add(Instantiate(Linea, new Vector3(xs3[i], 0, ys3[i]), Quaternion.Euler(0, angulosEnGrados3[i], 0), this.transform));
+        }
         ////////////////////////////////////7
     }
 

@@ -15,7 +15,6 @@ class TrackGenerator : MonoBehaviour
     const int n2 = 10 * EvolutionManager.CarCount;
     const int n = 10 * EvolutionManager.CarCount;
     public static GameObject[] PA = new GameObject[n];
-    public static GameObject[] PR = new GameObject[n2];
     public static Vector3[] posIni = new Vector3[EvolutionManager.CarCount];
     public IList<GameObject> LPA = new List<GameObject>();
     public IList<GameObject> LPR = new List<GameObject>();
@@ -295,7 +294,7 @@ class TrackGenerator : MonoBehaviour
         Vector3 pos, pos2 = new Vector3();
         Quaternion rot;
         float offsetPos;
-        float offsetBuenas = UnityEngine.Random.Range(0.5f, ancho - 0.5f);
+        float offsetBuenas;// = UnityEngine.Random.Range(0.5f, ancho - 0.5f);
         for (int i = 0; i < xs.Length - 1; i++)
         {
             pos = new Vector3(xs[i], 0, ys[i]);
@@ -303,8 +302,8 @@ class TrackGenerator : MonoBehaviour
             pared.transform.position = pos;
             pared.transform.rotation = rot;
             LPA.Add(Instantiate(pared, pos, rot, this.transform));
-
-            pared.transform.Translate(offsetBuenas * -Vector3.back, Space.Self);
+            offsetBuenas = ancho / 4 * Mathf.Sin(i/n);
+            pared.transform.Translate((ancho/2 - offsetBuenas) * -Vector3.back, Space.Self);
             listaBuena.Add(new Punto(pared.transform.position));
             pared.transform.Translate((ancho - offsetBuenas) * -Vector3.back, Space.Self);
 

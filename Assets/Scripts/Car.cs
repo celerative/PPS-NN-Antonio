@@ -10,7 +10,7 @@ public class Car : MonoBehaviour
     [SerializeField] LayerMask SensorMask2; // Defines the layer of the walls ("powerup")
 
 
-    public static NeuralNetwork NextNetwork = new NeuralNetwork(new uint[] { 10, 32, 32, 16, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
+    public static NeuralNetwork NextNetwork = new NeuralNetwork(new uint[] { 10, 32, 32, 16, 16, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
 
     public string TheGuid { get; private set; } // The Unique ID of the current car
 
@@ -101,7 +101,7 @@ public class Car : MonoBehaviour
             yield return new WaitForSeconds(2f); // Wait for some time
             if (OldFitness == Fitness) // Check if the fitness didn't change yet
                 WallHit(); // Kill this car
-            else if ((deltaCheck > 1f) || ((deltaPowerUp > 0.5f)))
+            else if ((deltaCheck > 1f) || ((Time.time - startTimePow > 0.5f)))
                 WallHit();
             else if (CantPowerUps == 0)
                 WallHit();

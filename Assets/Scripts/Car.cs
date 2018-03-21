@@ -10,7 +10,7 @@ public class Car : MonoBehaviour
     [SerializeField] LayerMask SensorMask2; // Defines the layer of the walls ("powerup")
 
 
-    public static NeuralNetwork NextNetwork = new NeuralNetwork(new uint[] { 10, 32, 32, 16, 16, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
+    public static NeuralNetwork NextNetwork = new NeuralNetwork(new uint[] { 16, 32,32, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
 
     public string TheGuid { get; private set; } // The Unique ID of the current car
 
@@ -72,13 +72,27 @@ public class Car : MonoBehaviour
         NeuralInput[6] = CastRay(transform.right * Mathf.Sin(dir2) + transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + Vector3.forward * Mathf.Cos(dir2), 15) / RayLength;
         NeuralInput[7] = CastRay(transform.right * Mathf.Sin(dir2) + -transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + -Vector3.forward * Mathf.Cos(dir2), 17) / RayLength;
 
-
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // Cast forward-right and forward-left
-        NeuralInput[8] = CastRay2(transform.right * Mathf.Sin(dir) + transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + Vector3.forward * Mathf.Cos(dir), 19) / RayLength2;
-        NeuralInput[9] = CastRay2(transform.right * Mathf.Sin(dir) + -transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + -Vector3.forward * Mathf.Cos(dir), 21) / RayLength2;
+
+        NeuralInput[8] = CastRay2(transform.forward, Vector3.forward, 1) / RayLength2;
+        NeuralInput[9] = CastRay2(-transform.forward, -Vector3.forward, 3) / RayLength2;
+        NeuralInput[10] = CastRay2(transform.right, Vector3.right, 5) / RayLength2;
+        NeuralInput[11] = CastRay2(-transform.right, -Vector3.right, 7) / RayLength2;
+
+        NeuralInput[12] = CastRay2(transform.right * Mathf.Sin(dir2) + transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + Vector3.forward * Mathf.Cos(dir2), 15) / RayLength2;
+        NeuralInput[13] = CastRay2(transform.right * Mathf.Sin(dir2) + -transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + -Vector3.forward * Mathf.Cos(dir2), 17) / RayLength2;
+
+        NeuralInput[14] = CastRay2(transform.right * Mathf.Sin(dir) + transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + Vector3.forward * Mathf.Cos(dir), 19) / RayLength2;
+        NeuralInput[15] = CastRay2(transform.right * Mathf.Sin(dir) + -transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + -Vector3.forward * Mathf.Cos(dir), 21) / RayLength2;
 
 
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Feed through the network
         NeuralOutput = TheNetwork.FeedForward(NeuralInput);
 
@@ -149,7 +163,7 @@ public class Car : MonoBehaviour
         {
 
             float Dist = Vector3.Distance(Hit.point, transform.position); // Get the distance of the hit in the line
-            float valor = Mathf.Exp(-Dist);
+            float valor = Mathf.Exp(-(Dist * Dist));
             TheLineRenderer.SetPosition(LinePositionIndex, Dist * LineDirection); // Set the position of the line
             return valor;
         }
@@ -164,7 +178,7 @@ public class Car : MonoBehaviour
 
 
 
-    const float MAX_FORCE = 30;
+    const float MAX_FORCE = 50;
     const float MAX_TURN = 30;
     // The main function that moves the car.
     public void Move(float acelerar, float frenar, float izq)
@@ -196,7 +210,7 @@ public class Car : MonoBehaviour
         cantCheckpoints++;
         deltaCheck = Time.time - startTimeCheck;
         startTimeCheck = Time.time;
-        Fitness = (1 + Fitness) + 5 / (1 + deltaCheck); // Increase Fitness/Score
+        Fitness = (1 + Fitness) + 10 / (1 + deltaCheck); // Increase Fitness/Score
     }
 
     public void PowerUpHit()
@@ -211,7 +225,7 @@ public class Car : MonoBehaviour
         deltaPowerUp = Time.time - startTimePow;
         startTimePow = Time.time;
 
-        Fitness += 3 + 5 * Mathf.Exp(-deltaPowerUp);
+        Fitness += 30 + 5 * Mathf.Exp(-(deltaPowerUp * deltaPowerUp));
     }
 
 

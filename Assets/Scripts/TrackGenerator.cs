@@ -10,7 +10,7 @@ using System.Linq;
 
 class TrackGenerator : MonoBehaviour
 {
-    static TrackGenerator SINGLETON = null;
+    public static TrackGenerator SINGLETON;
     const int MAXDESPLAZAMIENTO = 250;
     const int n2 = 10 * EvolutionManager.CarCount;
     const int n = 10 * EvolutionManager.CarCount;
@@ -34,6 +34,7 @@ class TrackGenerator : MonoBehaviour
     public static bool PistaCreada;
     public bool isObstaculos;
     public bool isDeforme;
+    public static bool isSeguidorDeLinea = true;
 
     static void imprimir(string a)
     {
@@ -205,9 +206,7 @@ class TrackGenerator : MonoBehaviour
 
         for (int i = 0; i < p.Length; i++)
         {
-
             p[i] = new Punto(p[i].modulo + UnityEngine.Random.Range(-1, 1) * 30f, p[i].argumento, 1);
-
         }
         p[p.Length - 1] = new Punto(p[0]);
         arreglarAngulos(ref p);
@@ -258,7 +257,7 @@ class TrackGenerator : MonoBehaviour
 
         ////////////////////////////////////// AGREGAR DIFICULTAD
         float ancho = UnityEngine.Random.Range(5f, 9f);
-
+        ancho = (isSeguidorDeLinea) ? ancho / 3 : ancho;
         Punto[] convexo2 = new Punto[convexo.Length * 2];
         if (isDeforme)
             deformar(ref convexo);
@@ -288,9 +287,10 @@ class TrackGenerator : MonoBehaviour
 
         IList<Punto> listaRoja = new List<Punto>();
         IList<Punto> listaBuena = new List<Punto>();
-        IList<Punto> listaCheckpoint = new List<Punto>();
+
         Punto[] puntosInteriores;
-        int offset = r.Next();
+        Punto[] puntosLinea;
+
         Vector3 pos, pos2 = new Vector3();
         Quaternion rot;
         float offsetPos;
@@ -302,11 +302,13 @@ class TrackGenerator : MonoBehaviour
             pared.transform.position = pos;
             pared.transform.rotation = rot;
             LPA.Add(Instantiate(pared, pos, rot, this.transform));
-            offsetBuenas = ancho / 4 * Mathf.Sin(i/n);
-            pared.transform.Translate((ancho/2 - offsetBuenas) * -Vector3.back, Space.Self);
-            listaBuena.Add(new Punto(pared.transform.position));
-            pared.transform.Translate((ancho - offsetBuenas) * -Vector3.back, Space.Self);
-
+            if (isSeguidorDeLinea)
+            {
+                offsetBuenas = ancho / 4 * Mathf.Sin(i / n) - ancho / 4;
+                pared.transform.Translate((ancho / 2 - offsetBuenas) * -Vector3.back, Space.Self);
+                listaBuena.Add(new Punto(pared.transform.position));
+                pared.transform.Translate((ancho - offsetBuenas) * -Vector3.back, Space.Self);
+            }
             if (i % 10 == 0)
             {
                 offsetPos = UnityEngine.Random.Range(0, ancho / 2);
@@ -329,7 +331,7 @@ class TrackGenerator : MonoBehaviour
                 checkpoint.transform.localScale = new Vector3(0.1f, checkpoint.transform.localScale.y, ancho);
                 LCH.Add(Instantiate(checkpoint, pared.transform.position, Quaternion.Euler(0, angulosEnGrados[i], 0), this.transform));
             }
-            if (UnityEngine.Random.value > 0.9999f)
+            if ((UnityEngine.Random.value > 0.85f) && !isSeguidorDeLinea)
             {
                 powerUp.transform.position = pos;
                 powerUp.transform.rotation = rot;
@@ -348,15 +350,18 @@ class TrackGenerator : MonoBehaviour
             EvolutionManager.ini = posIni[i / (EvolutionManager.CarCount / 10)];
         }
 
-        Punto[] puntosLinea = listaBuena.ToArray();
-        puntosLinea[puntosLinea.Length - 1] = puntosLinea[0];
-        arreglarAngulos(ref puntosLinea);
 
+        puntosLinea = listaBuena.ToArray();
+
+        if (listaBuena.Count > 0)
+        {
+            puntosLinea[puntosLinea.Length - 1] = puntosLinea[0];
+            arreglarAngulos(ref puntosLinea);
+        }
         puntosInteriores = listaRoja.ToArray();
         puntosInteriores[puntosInteriores.Length - 1] = puntosInteriores[0];
         arreglarAngulos(ref puntosInteriores);
 
-        Punto[] PC = listaCheckpoint.ToArray();
         float[] xx2, xx3;
         float[] yy2, yy3;
         float[] xs2, ys2, xs3, ys3;
@@ -365,17 +370,30 @@ class TrackGenerator : MonoBehaviour
         xx2 = Punto.getAbscisas(puntosInteriores);
         yy2 = Punto.getOrdenadas(puntosInteriores);
 
-        xx3 = Punto.getAbscisas(puntosLinea);
-        yy3 = Punto.getOrdenadas(puntosLinea);
+
+        if (isSeguidorDeLinea)
+        {
+            xx3 = Punto.getAbscisas(puntosLinea);
+            yy3 = Punto.getOrdenadas(puntosLinea);
+            CubicSpline.FitParametric(xx3, yy3, n2, out xs3, out ys3, 1, -1, 1, -1);
+            for (int i = 0; i < xx3.Length; i++)
+            {
+                angulosEnGrados3[i] = 180 * Mathf.Atan2(ys3[i + 1] - ys3[i], -xs3[i + 1] + xs3[i]) / Mathf.PI;
+
+                Linea.transform.rotation = Quaternion.Euler(0, angulosEnGrados3[i], 0);
+                Linea.transform.position = new Vector3(xs3[i], 0, ys3[i]);
+                LB.Add(Instantiate(Linea, new Vector3(xs3[i], 0, ys3[i]), Quaternion.Euler(0, angulosEnGrados3[i], 0), this.transform));
+            }
+
+        }
 
         CubicSpline.FitParametric(xx2, yy2, n2, out xs2, out ys2, 1, -1, 1, -1);
-        CubicSpline.FitParametric(xx3, yy3, n2, out xs3, out ys3, 1, -1, 1, -1);
+
 
         for (int i = 0; i < xs2.Length - 1; i++)
         {
             angulosEnGrados2[i] = 180 * Mathf.Atan2(ys2[i + 1] - ys2[i], -xs2[i + 1] + xs2[i]) / Mathf.PI;
 
-            angulosEnGrados3[i] = 180 * Mathf.Atan2(ys3[i + 1] - ys3[i], -xs3[i + 1] + xs3[i]) / Mathf.PI;
         }
 
         for (int i = 0; i < xs2.Length - 1; i++)
@@ -385,12 +403,6 @@ class TrackGenerator : MonoBehaviour
             LPR.Add(Instantiate(paredRoja, new Vector3(xs2[i], 0, ys2[i]), Quaternion.Euler(0, angulosEnGrados2[i], 0), this.transform));
         }
 
-        for (int i = 0; i < xs3.Length; i++)
-        {
-            Linea.transform.rotation = Quaternion.Euler(0, angulosEnGrados3[i], 0);
-            Linea.transform.position = new Vector3(xs3[i], 0, ys3[i]);
-            LB.Add(Instantiate(Linea, new Vector3(xs3[i], 0, ys3[i]), Quaternion.Euler(0, angulosEnGrados3[i], 0), this.transform));
-        }
         ////////////////////////////////////7
     }
 

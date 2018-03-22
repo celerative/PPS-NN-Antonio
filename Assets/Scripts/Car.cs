@@ -10,7 +10,8 @@ public class Car : MonoBehaviour
     [SerializeField] LayerMask SensorMask2; // Defines the layer of the walls ("powerup")
 
 
-    public static NeuralNetwork NextNetwork = new NeuralNetwork(new uint[] { 10, 32, 32, 16, 16, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
+    public static NeuralNetwork NeuralNetworkSeguidor = new NeuralNetwork(new uint[] { 10, 32, 32, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
+    public static NeuralNetwork NeuralNetworkPowerUps = new NeuralNetwork(new uint[] { 18, 32, 32, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
 
     public string TheGuid { get; private set; } // The Unique ID of the current car
 
@@ -27,14 +28,20 @@ public class Car : MonoBehaviour
     {
         TheGuid = Guid.NewGuid().ToString(); // Assigns a new Unique ID for the current car
         MyID = GetInstanceID();
-        TheNetwork = NextNetwork; // Sets the current network to the Next Network
-        NextNetwork = new NeuralNetwork(NextNetwork.Topology, null); // Make sure the Next Network is reassigned to avoid having another car use the same network
-
+        if (TrackGenerator.isSeguidorDeLinea)
+        {
+            TheNetwork = NeuralNetworkSeguidor; // Sets the current network to the Next Network
+            NeuralNetworkSeguidor = new NeuralNetwork(NeuralNetworkSeguidor.Topology, null); // Make sure the Next Network is reassigned to avoid having another car use the same network
+        }
+        else
+        {
+            TheNetwork = NeuralNetworkPowerUps; // Sets the current network to the Next Network
+            NeuralNetworkPowerUps = new NeuralNetwork(NeuralNetworkPowerUps.Topology, null); // Make sure the Next Network is reassigned to avoid having another car use the same network
+        }
         TheRigidbody = GetComponent<Rigidbody>(); // Assign Rigidbody
         TheLineRenderer = GetComponent<LineRenderer>(); // Assign LineRenderer
         TheCollider = GetComponentInChildren<BoxCollider>();
         StartCoroutine(IsNotImproving()); // Start checking if the score stayed the same for a lot of time
-
 
         startTimeCheck = Time.time;
         startTimePow = startTimeCheck;
@@ -55,8 +62,10 @@ public class Car : MonoBehaviour
     public float[] NeuralInput;
     void GetNeuralInputAxis()
     {
-        NeuralInput = new float[NextNetwork.Topology[0]];
-
+        if (TrackGenerator.isSeguidorDeLinea)
+            NeuralInput = new float[NeuralNetworkSeguidor.Topology[0]];
+        else
+            NeuralInput = new float[NeuralNetworkPowerUps.Topology[0]];
         // Cast forward, back, right and left
         NeuralInput[0] = CastRay(transform.forward, Vector3.forward, 1) / RayLength;
         NeuralInput[1] = CastRay(-transform.forward, -Vector3.forward, 3) / RayLength;
@@ -72,13 +81,31 @@ public class Car : MonoBehaviour
         NeuralInput[6] = CastRay(transform.right * Mathf.Sin(dir2) + transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + Vector3.forward * Mathf.Cos(dir2), 15) / RayLength;
         NeuralInput[7] = CastRay(transform.right * Mathf.Sin(dir2) + -transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + -Vector3.forward * Mathf.Cos(dir2), 17) / RayLength;
 
-
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // Cast forward-right and forward-left
-        NeuralInput[8] = CastRay2(transform.right * Mathf.Sin(dir) + transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + Vector3.forward * Mathf.Cos(dir), 19) / RayLength2;
-        NeuralInput[9] = CastRay2(transform.right * Mathf.Sin(dir) + -transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + -Vector3.forward * Mathf.Cos(dir), 21) / RayLength2;
+        if (!TrackGenerator.isSeguidorDeLinea) //si persigue powerUps
+        {
+            NeuralInput[8] = CastRay2(transform.forward, Vector3.forward, 1) / RayLength2;
+            NeuralInput[9] = CastRay2(-transform.forward, -Vector3.forward, 3) / RayLength2;
+            NeuralInput[10] = CastRay2(transform.right, Vector3.right, 5) / RayLength2;
+            NeuralInput[11] = CastRay2(-transform.right, -Vector3.right, 7) / RayLength2;
+
+            NeuralInput[12] = CastRay2(transform.right * Mathf.Sin(dir2) + transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + Vector3.forward * Mathf.Cos(dir2), 15) / RayLength2;
+            NeuralInput[13] = CastRay2(transform.right * Mathf.Sin(dir2) + -transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + -Vector3.forward * Mathf.Cos(dir2), 17) / RayLength2;
+
+            NeuralInput[14] = CastRay2(transform.right * Mathf.Sin(dir) + transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + Vector3.forward * Mathf.Cos(dir), 19) / RayLength2;
+            NeuralInput[15] = CastRay2(transform.right * Mathf.Sin(dir) + -transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + -Vector3.forward * Mathf.Cos(dir), 21) / RayLength2;
+        }
+        else
+        {
+            NeuralInput[8] = CastRay2(transform.right * Mathf.Sin(dir) + transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + Vector3.forward * Mathf.Cos(dir), 19) / RayLength2;
+            NeuralInput[9] = CastRay2(transform.right * Mathf.Sin(dir) + -transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + -Vector3.forward * Mathf.Cos(dir), 21) / RayLength2;
+        }
 
 
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Feed through the network
         NeuralOutput = TheNetwork.FeedForward(NeuralInput);
 
@@ -149,7 +176,7 @@ public class Car : MonoBehaviour
         {
 
             float Dist = Vector3.Distance(Hit.point, transform.position); // Get the distance of the hit in the line
-            float valor = Mathf.Exp(-Dist);
+            float valor = Mathf.Exp(-(Dist * Dist));
             TheLineRenderer.SetPosition(LinePositionIndex, Dist * LineDirection); // Set the position of the line
             return valor;
         }
@@ -164,8 +191,8 @@ public class Car : MonoBehaviour
 
 
 
-    const float MAX_FORCE = 30;
-    const float MAX_TURN = 30;
+    const float MAX_FORCE = 50;
+    const float MAX_TURN = 60;
     // The main function that moves the car.
     public void Move(float acelerar, float frenar, float izq)
     {
@@ -196,7 +223,7 @@ public class Car : MonoBehaviour
         cantCheckpoints++;
         deltaCheck = Time.time - startTimeCheck;
         startTimeCheck = Time.time;
-        Fitness = (1 + Fitness) + 5 / (1 + deltaCheck); // Increase Fitness/Score
+        Fitness = (1 + Fitness) + 10 / (1 + deltaCheck); // Increase Fitness/Score
     }
 
     public void PowerUpHit()
@@ -211,7 +238,7 @@ public class Car : MonoBehaviour
         deltaPowerUp = Time.time - startTimePow;
         startTimePow = Time.time;
 
-        Fitness += 3 + 5 * Mathf.Exp(-deltaPowerUp);
+        Fitness += 30 + 5 * Mathf.Exp(-(deltaPowerUp * deltaPowerUp));
     }
 
 

@@ -17,10 +17,8 @@ public class PowerUp : MonoBehaviour
             {
                 AllGuids.Add(CarGuid);
                 CarComponent.PowerUpHit();
-                // Increase the car's fitness
-                //gameObject.SetActive(false);
+                
             }
-            //Destroy(this);
         }
     }
 }

@@ -40,8 +40,10 @@ public class EvolutionManager : MonoBehaviour
         else
             gameObject.SetActive(false); // There is another instance already in place. Make this one inactive.
 
-        BestNeuralNetwork = new NeuralNetwork(Car.NextNetwork); // Set the BestNeuralNetwork to a random new network
-
+        if (TrackGenerator.isSeguidorDeLinea)
+            BestNeuralNetwork = new NeuralNetwork(Car.NeuralNetworkSeguidor); // Set the BestNeuralNetwork to a random new network
+        else
+            BestNeuralNetwork = new NeuralNetwork(Car.NeuralNetworkPowerUps);
         StartGeneration();
     }
 
@@ -54,28 +56,52 @@ public class EvolutionManager : MonoBehaviour
             filmar = true;
             GenerationCount++; // Increment the generation count
             GenerationNumberText.text = "Generación: " + GenerationCount + "     Best Fitness: " + BestFitness.ToString("N") + "   Autos Vivos: " + Cars.Count.ToString(); // Update generation text
-
-            for (int i = 0; i < CarCount; i++)
+            if (TrackGenerator.isSeguidorDeLinea)
             {
-                if (i == 0)
-                    Car.NextNetwork = BestNeuralNetwork; // Make sure one car uses the best network
-                if (i == 1 && GenerationCount > 3)
+                for (int i = 0; i < CarCount; i++)
                 {
-                    Car.NextNetwork = SecondBest;
-                    Car.NextNetwork.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 1.2f));
-                }
-                else
-                {
-                    if (GenerationCount > 3)
+                    if (i == 0)
+                        Car.NeuralNetworkSeguidor = BestNeuralNetwork; // Make sure one car uses the best network
+                    if (i == 1 && GenerationCount > 3)
                     {
-                        Car.NextNetwork = new NeuralNetwork(BestNeuralNetwork); // Clone the best neural network and set it to be for the next car
-                        Car.NextNetwork.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 1.2f));
+                        Car.NeuralNetworkSeguidor = SecondBest;
+                        Car.NeuralNetworkSeguidor.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 0.6f));
                     }
+                    else
+                    {
+                        if (GenerationCount > 3)
+                        {
+                            Car.NeuralNetworkSeguidor = new NeuralNetwork(BestNeuralNetwork); // Clone the best neural network and set it to be for the next car
+                            Car.NeuralNetworkSeguidor.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 0.6f));
+                        }
+                    }
+
+                    Cars.Add(Instantiate(CarPrefab, TrackGenerator.posIni[i], Quaternion.identity, transform).GetComponent<Car>()); // Instantiate a new car and add it to the list of cars
                 }
-
-                Cars.Add(Instantiate(CarPrefab, TrackGenerator.posIni[i], Quaternion.identity, transform).GetComponent<Car>()); // Instantiate a new car and add it to the list of cars
             }
+            else
+            {
+                for (int i = 0; i < CarCount; i++)
+                {
+                    if (i == 0)
+                        Car.NeuralNetworkPowerUps = BestNeuralNetwork; // Make sure one car uses the best network
+                    if (i == 1 && GenerationCount > 3)
+                    {
+                        Car.NeuralNetworkPowerUps = SecondBest;
+                        Car.NeuralNetworkPowerUps.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 0.6f));
+                    }
+                    else
+                    {
+                        if (GenerationCount > 3)
+                        {
+                            Car.NeuralNetworkPowerUps = new NeuralNetwork(BestNeuralNetwork); // Clone the best neural network and set it to be for the next car
+                            Car.NeuralNetworkPowerUps.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 0.6f));
+                        }
+                    }
 
+                    Cars.Add(Instantiate(CarPrefab, TrackGenerator.posIni[i], Quaternion.identity, transform).GetComponent<Car>()); // Instantiate a new car and add it to the list of cars
+                }
+            }
         }
     }
 

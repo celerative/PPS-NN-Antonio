@@ -21,9 +21,9 @@ public class NeuralNetwork
 
     Random TheRandomizer; // It is the Random instance used to mutate the NeuralNetwork
 
-    private class NeuralSection
+    public class NeuralSection
     {
-        private float[][] Weights; // Contains all the weights of the section where [i][j] represents the weight from neuron i in the input layer and neuron j in the output layer
+        public float[][] Weights; // Contains all the weights of the section where [i][j] represents the weight from neuron i in the input layer and neuron j in the output layer
 
         private Random TheRandomizer; // Contains a reference to the Random instance of the NeuralNetwork
 

@@ -291,6 +291,7 @@ class TrackGenerator : MonoBehaviour
         Punto[] puntosInteriores;
         Punto[] puntosLinea;
 
+        int offset = r.Next();
         Vector3 pos, pos2 = new Vector3();
         Quaternion rot;
         float offsetPos;
@@ -332,6 +333,7 @@ class TrackGenerator : MonoBehaviour
                 LCH.Add(Instantiate(checkpoint, pared.transform.position, Quaternion.Euler(0, angulosEnGrados[i], 0), this.transform));
             }
             if ((UnityEngine.Random.value > 0.85f) && !isSeguidorDeLinea)
+            if ((UnityEngine.Random.value > 0.85f)&&!isSeguidorDeLinea)
             {
                 powerUp.transform.position = pos;
                 powerUp.transform.rotation = rot;
@@ -403,7 +405,7 @@ class TrackGenerator : MonoBehaviour
             LPR.Add(Instantiate(paredRoja, new Vector3(xs2[i], 0, ys2[i]), Quaternion.Euler(0, angulosEnGrados2[i], 0), this.transform));
         }
 
-        ////////////////////////////////////7
+
     }
 
 }

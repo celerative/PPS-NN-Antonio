@@ -61,11 +61,14 @@ public class EvolutionManager : MonoBehaviour
                 for (int i = 0; i < CarCount; i++)
                 {
                     if (i == 0)
+                    {
                         Car.NeuralNetworkSeguidor = BestNeuralNetwork; // Make sure one car uses the best network
+                        Car.NeuralNetworkSeguidor.Mutate(0.01f, UnityEngine.Random.Range(0.1f, 0.15f));
+                    }
                     if (i == 1 && GenerationCount > 3)
                     {
                         Car.NeuralNetworkSeguidor = SecondBest;
-                        Car.NeuralNetworkSeguidor.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 0.6f));
+                        Car.NeuralNetworkSeguidor.Mutate(0.01f, UnityEngine.Random.Range(0.2f, 0.22f));
                     }
                     else
                     {
@@ -84,18 +87,17 @@ public class EvolutionManager : MonoBehaviour
                 for (int i = 0; i < CarCount; i++)
                 {
                     if (i == 0)
-                        Car.NeuralNetworkPowerUps = BestNeuralNetwork; // Make sure one car uses the best network
+                        Car.NeuralNetworkPowerUps = BestNeuralNetwork; // El mejor se queda
                     if (i == 1 && GenerationCount > 3)
                     {
                         Car.NeuralNetworkPowerUps = SecondBest;
-                        Car.NeuralNetworkPowerUps.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 0.6f));
                     }
                     else
                     {
                         if (GenerationCount > 3)
                         {
                             Car.NeuralNetworkPowerUps = new NeuralNetwork(BestNeuralNetwork); // Clone the best neural network and set it to be for the next car
-                            Car.NeuralNetworkPowerUps.Mutate(0.08f, UnityEngine.Random.Range(0.2f, 0.6f));
+                            Car.NeuralNetworkPowerUps.Mutate(0.05f, UnityEngine.Random.Range(0.2f, 0.5f));
                         }
                     }
 

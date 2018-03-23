@@ -6,12 +6,17 @@ using UnityEngine;
 
 public class Car : MonoBehaviour
 {
-    [SerializeField] LayerMask SensorMask; // Defines the layer of the walls ("Wall")
-    [SerializeField] LayerMask SensorMask2; // Defines the layer of the walls ("powerup")
+    // Define la capa de las paredes
+    [SerializeField] LayerMask SensorMask;
+    // Define la capa de los powerUps
+    [SerializeField] LayerMask SensorMask2;
 
-
-    public static NeuralNetwork NeuralNetworkSeguidor = new NeuralNetwork(new uint[] { 10, 32, 32, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
-    public static NeuralNetwork NeuralNetworkPowerUps = new NeuralNetwork(new uint[] { 18, 32, 32, 3 }, null); // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
+    //Se declaran dos redes reuronales distintas, según el tipo de simulación que se esté llevando a cabo, si la seguidor de linea, o la recolector de powerUps
+    // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
+    //La siguiente red neuronal elegida va a ser usada por el siguiente auto
+    public static NeuralNetwork NeuralNetworkSeguidor = new NeuralNetwork(new uint[] { 11, 32, 32, 3 }, null);
+    public static NeuralNetwork NeuralNetworkPowerUps = new NeuralNetwork(new uint[] { 18, 32, 32, 3 }, null);
+    // public NeuralNetwork that refers to the next neural network to be set to the next instantiated car
 
     public string TheGuid { get; private set; } // The Unique ID of the current car
 
@@ -47,7 +52,7 @@ public class Car : MonoBehaviour
         startTimePow = startTimeCheck;
         TheLineRenderer.positionCount = 50; // Make sure the line is long enough
     }
-    public float salida1, salida2, salida3, salida4;
+    public float salida1, salida2, salida3;
     public float[] NeuralOutput;
     private void FixedUpdate()
     {
@@ -90,33 +95,30 @@ public class Car : MonoBehaviour
             NeuralInput[9] = CastRay2(-transform.forward, -Vector3.forward, 3) / RayLength2;
             NeuralInput[10] = CastRay2(transform.right, Vector3.right, 5) / RayLength2;
             NeuralInput[11] = CastRay2(-transform.right, -Vector3.right, 7) / RayLength2;
-
             NeuralInput[12] = CastRay2(transform.right * Mathf.Sin(dir2) + transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + Vector3.forward * Mathf.Cos(dir2), 15) / RayLength2;
             NeuralInput[13] = CastRay2(transform.right * Mathf.Sin(dir2) + -transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + -Vector3.forward * Mathf.Cos(dir2), 17) / RayLength2;
-
             NeuralInput[14] = CastRay2(transform.right * Mathf.Sin(dir) + transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + Vector3.forward * Mathf.Cos(dir), 19) / RayLength2;
             NeuralInput[15] = CastRay2(transform.right * Mathf.Sin(dir) + -transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + -Vector3.forward * Mathf.Cos(dir), 21) / RayLength2;
         }
         else
         {
-            NeuralInput[8] = CastRay2(transform.right * Mathf.Sin(dir) + transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + Vector3.forward * Mathf.Cos(dir), 19) / RayLength2;
-            NeuralInput[9] = CastRay2(transform.right * Mathf.Sin(dir) + -transform.forward * Mathf.Cos(dir), Vector3.right * Mathf.Sin(dir) + -Vector3.forward * Mathf.Cos(dir), 21) / RayLength2;
+            NeuralInput[8] = CastRay2(transform.right * Mathf.Sin(dir2) + transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + Vector3.forward * Mathf.Cos(dir2), 19) / RayLength2;
+            NeuralInput[9] = CastRay2(transform.right * Mathf.Sin(dir2) + -transform.forward * Mathf.Cos(dir2), Vector3.right * Mathf.Sin(dir2) + -Vector3.forward * Mathf.Cos(dir2), 21) / RayLength2;
+            NeuralInput[10] = CastRay2(-transform.forward, -Vector3.forward, 3) / RayLength2;
+
         }
 
 
 
+
+
+
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Feed through the network
+        // alimentar a la red con los valores de la entrada
         NeuralOutput = TheNetwork.FeedForward(NeuralInput);
-
-        // Get Vertical Value
-
-
         salida1 = Convert.ToSingle(NeuralOutput[0]);
         salida2 = Convert.ToSingle(NeuralOutput[1]);
         salida3 = Convert.ToSingle(NeuralOutput[2]);
-
-
     }
 
     // Checks each few seconds if the car didn't make any improvement
@@ -196,23 +198,16 @@ public class Car : MonoBehaviour
     // The main function that moves the car.
     public void Move(float acelerar, float frenar, float izq)
     {
-
         TheCollider.material.dynamicFriction = frenar;
         float a = MAX_FORCE * acelerar;
         float b = a;
         izq *= MAX_TURN;
         TheRigidbody.angularVelocity = transform.up * izq;
-
         TheRigidbody.velocity = -transform.right * b;
-
-
-
-
     }
 
     public float deltaCheck = 0;
     public float deltaPowerUp = 0;
-
     public int cantCheckpoints = 0;
     public static int MaxCantPowerUps = -1;
     public int CantPowerUps = 0;
@@ -223,7 +218,7 @@ public class Car : MonoBehaviour
         cantCheckpoints++;
         deltaCheck = Time.time - startTimeCheck;
         startTimeCheck = Time.time;
-        Fitness = (1 + Fitness) + 10 / (1 + deltaCheck); // Increase Fitness/Score
+        Fitness += 10 + 10 / (1 + deltaCheck); // Increase Fitness/Score
     }
 
     public void PowerUpHit()
@@ -242,7 +237,7 @@ public class Car : MonoBehaviour
     }
 
 
-    private void OnCollisionEnter(Collision collision) // Once anything hits the wall
+    /*private void OnCollisionEnter(Collision collision) // Once anything hits the wall
     {
         if (collision.gameObject.CompareTag("Car")) // Make sure it's a car
         {
@@ -250,7 +245,7 @@ public class Car : MonoBehaviour
             WallHit(); // If it is a car, tell it that it just hit a wall
         }
     }
-
+    */
 
 
     // Called by walls when hit by the car

@@ -1,3 +1,1 @@
 # Genetic
-asd
-tuvieja
